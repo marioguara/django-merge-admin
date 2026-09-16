@@ -1,0 +1,103 @@
+{% extends "admin/base_site.html" %}
+{% load i18n static %}
+
+{% block extrastyle %}
+    {{ block.super }}
+    <link rel="stylesheet" href="{% static 'merge_admin/merge_admin.css' %}">
+{% endblock %}
+
+{% block breadcrumbs %}
+<div class="breadcrumbs">
+    <a href="{% url 'admin:index' %}">{% trans 'Home' %}</a>
+    &rsaquo; <a href="{% url 'admin:app_list' app_label=opts.app_label %}">{{ opts.app_config.verbose_name }}</a>
+    &rsaquo; <a href="{% url 'admin:'|add:opts.app_label|add:'_'|add:opts.model_name|add:'_changelist' %}">{{ opts.verbose_name_plural|capfirst }}</a>
+    &rsaquo; {% trans "Unisci" %}
+</div>
+{% endblock %}
+
+{% block content %}
+<h1>{{ title }}</h1>
+
+<p class="help">
+    {% blocktrans count counter=objects|length %}
+        Stai per unire {{ counter }} record. Seleziona quello da conservare: gli altri
+        verranno eliminati e ogni oggetto collegato (relazioni ForeignKey, OneToOne, ManyToMany)
+        sarà spostato sul record scelto.
+    {% plural %}
+        Stai per unire {{ counter }} record. Seleziona quello da conservare: gli altri
+        verranno eliminati e ogni oggetto collegato (relazioni ForeignKey, OneToOne, ManyToMany)
+        sarà spostato sul record scelto.
+    {% endblocktrans %}
+</p>
+
+<form method="post" action="{{ action_url }}">
+    {% csrf_token %}
+    {% for id in ids %}<input type="hidden" name="ids" value="{{ id }}">{% endfor %}
+    <input type="hidden" name="confirm" value="1">
+
+    <table class="merge-admin-preview">
+        <thead>
+            <tr>
+                <th>{% trans "Conserva" %}</th>
+                <th>{% trans "Record" %}</th>
+                <th>{% trans "Verranno spostati" %}</th>
+                <th>{% trans "Campi ereditati" %}</th>
+            </tr>
+        </thead>
+        <tbody>
+        {% for row in previews %}
+            <tr>
+                <td class="merge-admin-radio">
+                    <label>
+                        <input type="radio" name="primary" value="{{ row.obj.pk }}"
+                               {% if forloop.first %}checked{% endif %}>
+                    </label>
+                </td>
+                <td>
+                    <strong>{{ row.obj }}</strong>
+                    <div class="muted">ID {{ row.obj.pk }}</div>
+                </td>
+                <td>
+                    {% if row.plan.relations %}
+                        <ul class="merge-admin-relations">
+                            {% for rel in row.plan.relations %}
+                                <li>
+                                    <code>{{ rel.label }}</code>
+                                    <span class="badge">{{ rel.count }}</span>
+                                    <span class="muted">{{ rel.model_label }} — {{ rel.kind }}</span>
+                                </li>
+                            {% endfor %}
+                        </ul>
+                        <div class="muted">
+                            {% blocktrans count total=row.plan.total_related %}
+                                {{ total }} oggetto totale
+                            {% plural %}
+                                {{ total }} oggetti totali
+                            {% endblocktrans %}
+                        </div>
+                    {% else %}
+                        <span class="muted">{% trans "Nessun oggetto collegato" %}</span>
+                    {% endif %}
+                </td>
+                <td>
+                    {% if row.plan.field_fills %}
+                        <ul class="merge-admin-relations">
+                            {% for f in row.plan.field_fills %}<li><code>{{ f }}</code></li>{% endfor %}
+                        </ul>
+                    {% else %}
+                        <span class="muted">—</span>
+                    {% endif %}
+                </td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+
+    <div class="submit-row">
+        <a href="{{ cancel_url }}" class="button cancel-link">{% trans "Annulla" %}</a>
+        <input type="submit" value="{% trans 'Unisci ed elimina duplicati' %}"
+               class="default"
+               onclick="return confirm('{% trans "L\'operazione è irreversibile. Confermi?" %}');">
+    </div>
+</form>
+{% endblock %}

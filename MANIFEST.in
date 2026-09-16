@@ -1,0 +1,4 @@
+include LICENSE
+include README.md
+recursive-include merge_admin/templates *.html
+recursive-include merge_admin/static *

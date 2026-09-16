@@ -1,0 +1,72 @@
+.merge-admin-btn {
+    background: #417690;
+    color: #fff !important;
+    padding: 6px 10px;
+    border-radius: 4px;
+    text-decoration: none;
+}
+.merge-admin-btn:hover { background: #205067; }
+
+.merge-admin-picker {
+    padding: 1em;
+    background: var(--body-bg, #fff);
+    border: 1px solid var(--border-color, #ddd);
+    border-radius: 4px;
+}
+
+.merge-admin-results {
+    list-style: none;
+    padding: 0;
+    margin: .5em 0;
+    max-width: 480px;
+    max-height: 260px;
+    overflow-y: auto;
+    border: 1px solid var(--border-color, #ddd);
+    border-radius: 4px;
+    background: var(--body-bg, #fff);
+}
+.merge-admin-results li {
+    padding: 6px 10px;
+    cursor: pointer;
+    border-bottom: 1px solid var(--border-color, #eee);
+}
+.merge-admin-results li:last-child { border-bottom: none; }
+.merge-admin-results li:hover { background: rgba(65, 118, 144, 0.1); }
+.merge-admin-results li.selected { background: #417690; color: #fff; }
+.merge-admin-results li.empty { cursor: default; color: #888; }
+
+.merge-admin-preview {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 1em 0;
+}
+.merge-admin-preview th,
+.merge-admin-preview td {
+    border: 1px solid var(--border-color, #ddd);
+    padding: 8px 10px;
+    vertical-align: top;
+    text-align: left;
+}
+.merge-admin-preview .merge-admin-radio { text-align: center; width: 60px; }
+
+.merge-admin-relations {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+.merge-admin-relations li { padding: 2px 0; }
+.merge-admin-relations code {
+    background: rgba(0,0,0,.05);
+    padding: 1px 5px;
+    border-radius: 3px;
+}
+.merge-admin-relations .badge {
+    display: inline-block;
+    background: #417690;
+    color: #fff;
+    border-radius: 10px;
+    padding: 0 8px;
+    font-size: 11px;
+    margin-left: 4px;
+}
+.muted { color: #888; font-size: 12px; }

@@ -1,0 +1,13 @@
+{% extends "admin/change_form.html" %}
+{% load i18n %}
+
+{% block object-tools-items %}
+    {% if merge_admin_from_object_url and change and not is_popup %}
+        <li>
+            <a href="{{ merge_admin_from_object_url }}" class="merge-admin-btn">
+                {{ merge_admin_button_label }}
+            </a>
+        </li>
+    {% endif %}
+    {{ block.super }}
+{% endblock %}

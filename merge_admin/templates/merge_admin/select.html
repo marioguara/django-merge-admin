@@ -1,0 +1,85 @@
+{% extends "admin/base_site.html" %}
+{% load i18n static %}
+
+{% block extrastyle %}
+    {{ block.super }}
+    <link rel="stylesheet" href="{% static 'merge_admin/merge_admin.css' %}">
+{% endblock %}
+
+{% block breadcrumbs %}
+<div class="breadcrumbs">
+    <a href="{% url 'admin:index' %}">{% trans 'Home' %}</a>
+    &rsaquo; <a href="{% url 'admin:app_list' app_label=opts.app_label %}">{{ opts.app_config.verbose_name }}</a>
+    &rsaquo; <a href="{% url 'admin:'|add:opts.app_label|add:'_'|add:opts.model_name|add:'_changelist' %}">{{ opts.verbose_name_plural|capfirst }}</a>
+    &rsaquo; <a href="{{ cancel_url }}">{{ original }}</a>
+    &rsaquo; {% trans "Unisci" %}
+</div>
+{% endblock %}
+
+{% block content %}
+<h1>{{ title }}</h1>
+
+<div class="merge-admin-picker module">
+    <p>{% trans "Cerca il record con cui vuoi unire" %} <strong>{{ original }}</strong>:</p>
+    <input type="text" id="merge-admin-search" placeholder="{% trans 'Digita per cercare…' %}"
+           autocomplete="off" class="vTextField" style="width: 100%; max-width: 480px;">
+    <ul id="merge-admin-results" class="merge-admin-results"></ul>
+
+    <form method="get" action="{{ confirm_url }}" id="merge-admin-form" style="margin-top: 1em;">
+        <input type="hidden" name="ids" value="{{ current_id }}">
+        <input type="hidden" name="ids" id="merge-admin-partner-input">
+        <div class="submit-row">
+            <a href="{{ cancel_url }}" class="button cancel-link">{% trans "Annulla" %}</a>
+            <input type="submit" value="{% trans 'Prosegui' %}" class="default" id="merge-admin-submit" disabled>
+        </div>
+    </form>
+</div>
+
+<script>
+(function () {
+    var searchInput = document.getElementById('merge-admin-search');
+    var resultsList = document.getElementById('merge-admin-results');
+    var partnerInput = document.getElementById('merge-admin-partner-input');
+    var submitBtn = document.getElementById('merge-admin-submit');
+    var current = "{{ current_id }}";
+    var timer = null;
+
+    function fetchResults(q) {
+        var url = "{{ search_url }}" + "?exclude=" + encodeURIComponent(current)
+                + "&q=" + encodeURIComponent(q);
+        fetch(url, { credentials: 'same-origin' })
+            .then(function (r) { return r.json(); })
+            .then(function (data) { render(data.results || []); });
+    }
+
+    function render(items) {
+        resultsList.innerHTML = '';
+        items.forEach(function (item) {
+            var li = document.createElement('li');
+            li.textContent = item.text;
+            li.dataset.id = item.id;
+            li.addEventListener('click', function () {
+                Array.prototype.forEach.call(resultsList.children, function (c) {
+                    c.classList.remove('selected');
+                });
+                li.classList.add('selected');
+                partnerInput.value = item.id;
+                submitBtn.disabled = false;
+            });
+            resultsList.appendChild(li);
+        });
+        if (items.length === 0) {
+            resultsList.innerHTML = '<li class="empty">{% trans "Nessun risultato" %}</li>';
+        }
+    }
+
+    searchInput.addEventListener('input', function () {
+        clearTimeout(timer);
+        timer = setTimeout(function () { fetchResults(searchInput.value); }, 200);
+    });
+
+    // initial results
+    fetchResults('');
+})();
+</script>
+{% endblock %}

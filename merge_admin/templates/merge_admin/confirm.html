@@ -18,16 +18,19 @@
 {% block content %}
 <h1>{{ title }}</h1>
 
-<p class="help">
+<p class="help merge-admin-help">
     {% blocktrans count counter=objects|length %}
-        Stai per unire {{ counter }} record. Seleziona quello da conservare: gli altri
-        verranno eliminati e ogni oggetto collegato (relazioni ForeignKey, OneToOne, ManyToMany)
-        sarà spostato sul record scelto.
+        Stai per unire {{ counter }} record. Scegli quello da conservare: gli altri
+        vengono eliminati e tutto ciò che è collegato passa al record scelto.
     {% plural %}
-        Stai per unire {{ counter }} record. Seleziona quello da conservare: gli altri
-        verranno eliminati e ogni oggetto collegato (relazioni ForeignKey, OneToOne, ManyToMany)
-        sarà spostato sul record scelto.
+        Stai per unire {{ counter }} record. Scegli quello da conservare: gli altri
+        vengono eliminati e tutto ciò che è collegato passa al record scelto.
     {% endblocktrans %}
+    {% if diff_fields %}
+        <br><strong>{% trans "Attenzione ai campi evidenziati" %}</strong>:
+        {{ diff_fields|join:", " }} —
+        {% trans "hanno valori diversi fra i record." %}
+    {% endif %}
 </p>
 
 <form method="post" action="{{ action_url }}">
@@ -35,69 +38,77 @@
     {% for id in ids %}<input type="hidden" name="ids" value="{{ id }}">{% endfor %}
     <input type="hidden" name="confirm" value="1">
 
-    <table class="merge-admin-preview">
-        <thead>
-            <tr>
-                <th>{% trans "Conserva" %}</th>
-                <th>{% trans "Record" %}</th>
-                <th>{% trans "Verranno spostati" %}</th>
-                <th>{% trans "Campi ereditati" %}</th>
-            </tr>
-        </thead>
-        <tbody>
-        {% for row in previews %}
-            <tr>
-                <td class="merge-admin-radio">
-                    <label>
-                        <input type="radio" name="primary" value="{{ row.obj.pk }}"
-                               {% if forloop.first %}checked{% endif %}>
-                    </label>
-                </td>
-                <td>
+    <div class="merge-admin-cards">
+    {% for row in previews %}
+        <label class="merge-admin-card">
+            <div class="merge-admin-card-head">
+                <input type="radio" name="primary" value="{{ row.obj.pk }}"
+                       {% if forloop.first %}checked{% endif %}>
+                <span class="merge-admin-card-title">
                     <strong>{{ row.obj }}</strong>
-                    <div class="muted">ID {{ row.obj.pk }}</div>
-                </td>
-                <td>
+                    <small>ID {{ row.obj.pk }}</small>
+                </span>
+                <span class="merge-admin-keep">{% trans "Conserva questo" %}</span>
+            </div>
+
+            {% if row.values %}
+            <dl class="merge-admin-data">
+                {% for v in row.values %}
+                <div class="merge-admin-field{% if v.differs %} is-diff{% endif %}{% if v.empty %} is-empty{% endif %}">
+                    <dt>{{ v.label }}{% if v.differs %} <span class="merge-admin-flag" title="{% trans 'Valore diverso fra i record' %}">≠</span>{% endif %}</dt>
+                    <dd>{% if v.empty %}<span class="muted">{% trans "vuoto" %}</span>{% else %}{{ v.value }}{% endif %}</dd>
+                </div>
+                {% endfor %}
+            </dl>
+            {% endif %}
+
+            <div class="merge-admin-effects">
+                <div class="merge-admin-effect">
+                    <h3>{% trans "Verranno spostati qui" %}</h3>
                     {% if row.plan.relations %}
                         <ul class="merge-admin-relations">
                             {% for rel in row.plan.relations %}
-                                <li>
-                                    <code>{{ rel.label }}</code>
-                                    <span class="badge">{{ rel.count }}</span>
-                                    <span class="muted">{{ rel.model_label }} — {{ rel.kind }}</span>
-                                </li>
+                            <li>
+                                <code>{{ rel.label }}</code>
+                                <span class="badge">{{ rel.count }}</span>
+                                <span class="muted">{{ rel.model_label }}</span>
+                            </li>
                             {% endfor %}
                         </ul>
-                        <div class="muted">
-                            {% blocktrans count total=row.plan.total_related %}
-                                {{ total }} oggetto totale
-                            {% plural %}
-                                {{ total }} oggetti totali
-                            {% endblocktrans %}
-                        </div>
+                        <p class="muted">
+                            {% blocktrans count total=row.plan.total_related %}{{ total }} oggetto in tutto{% plural %}{{ total }} oggetti in tutto{% endblocktrans %}
+                        </p>
                     {% else %}
-                        <span class="muted">{% trans "Nessun oggetto collegato" %}</span>
+                        <p class="muted">{% trans "Nessun oggetto collegato" %}</p>
                     {% endif %}
-                </td>
-                <td>
+                </div>
+
+                <div class="merge-admin-effect">
+                    <h3>{% trans "Campi che si riempiranno" %}</h3>
                     {% if row.plan.field_fills %}
                         <ul class="merge-admin-relations">
                             {% for f in row.plan.field_fills %}<li><code>{{ f }}</code></li>{% endfor %}
                         </ul>
                     {% else %}
-                        <span class="muted">—</span>
+                        <p class="muted">—</p>
                     {% endif %}
-                </td>
-            </tr>
-        {% endfor %}
-        </tbody>
-    </table>
+                </div>
+            </div>
+        </label>
+    {% endfor %}
+    </div>
 
-    <div class="submit-row">
-        <a href="{{ cancel_url }}" class="button cancel-link">{% trans "Annulla" %}</a>
-        <input type="submit" value="{% trans 'Unisci ed elimina duplicati' %}"
-               class="default"
-               onclick="return confirm('{% trans "L\'operazione è irreversibile. Confermi?" %}');">
+    <div class="submit-row merge-admin-submit">
+        {% comment %}
+        La domanda di conferma sta in un attributo, non in un onclick: il
+        testo tradotto contiene un apostrofo, che dentro il JavaScript
+        scritto nell'attributo chiudeva la stringa e rompeva il gestore.
+        {% endcomment %}
+        <input type="submit" value="{% trans 'Unisci ed elimina' %}" class="default"
+               data-merge-confirm="{% trans "L'operazione è irreversibile. Confermi?" %}">
+        <a href="{{ cancel_url }}" class="button cancel-link closelink">{% trans "Annulla" %}</a>
     </div>
 </form>
+
+<script src="{% static 'merge_admin/merge_admin.js' %}" defer></script>
 {% endblock %}

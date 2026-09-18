@@ -24,6 +24,7 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import path, reverse
 from django.utils.translation import gettext_lazy as _
 
+from .preview import DEFAULT_MAX_LENGTH, build_previews
 from .utils import build_plan, merge_records
 
 
@@ -31,6 +32,10 @@ class MergeAdminMixin:
     change_form_template = "merge_admin/change_form.html"
 
     merge_excluded_relations: Tuple[str, ...] = ()
+    #: Campi mostrati nella scheda di ciascun record da unire.
+    #: ``None`` = tutti i campi propri del modello.
+    merge_preview_fields: Optional[Tuple[str, ...]] = None
+    merge_preview_max_length: int = DEFAULT_MAX_LENGTH
     merge_fill_empty_fields: bool = True
     merge_search_fields: Optional[Tuple[str, ...]] = None
     merge_action_label = _("Unisci selezionati…")
@@ -225,6 +230,20 @@ class MergeAdminMixin:
             )
             previews.append({"obj": candidate, "plan": preview})
 
+        # Dati censiti su ogni record: senza vederli non si può scegliere
+        # quale conservare, e i campi che differiscono sono quelli su cui
+        # si rischia di perdere qualcosa.
+        _names, valori = build_previews(
+            self.model,
+            objects,
+            field_names=self.merge_preview_fields,
+            max_length=self.merge_preview_max_length,
+            model_admin=self,
+        )
+        for riga in previews:
+            riga["values"] = valori.get(riga["obj"].pk, [])
+            riga["diff_count"] = sum(1 for v in riga["values"] if v["differs"])
+
         context = self.admin_site.each_context(request)
         context.update({
             "opts": self.model._meta,
@@ -234,5 +253,8 @@ class MergeAdminMixin:
             "ids": ids,
             "cancel_url": reverse("admin:%s_%s_changelist" % info),
             "action_url": reverse("admin:%s_%s_merge_confirm" % info),
+            "diff_fields": sorted(
+                {v["label"] for riga in previews for v in riga["values"] if v["differs"]}
+            ),
         })
         return render(request, "merge_admin/confirm.html", context)

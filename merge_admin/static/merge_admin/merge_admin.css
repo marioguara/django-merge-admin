@@ -35,20 +35,6 @@
 .merge-admin-results li.selected { background: #417690; color: #fff; }
 .merge-admin-results li.empty { cursor: default; color: #888; }
 
-.merge-admin-preview {
-    width: 100%;
-    border-collapse: collapse;
-    margin: 1em 0;
-}
-.merge-admin-preview th,
-.merge-admin-preview td {
-    border: 1px solid var(--border-color, #ddd);
-    padding: 8px 10px;
-    vertical-align: top;
-    text-align: left;
-}
-.merge-admin-preview .merge-admin-radio { text-align: center; width: 60px; }
-
 .merge-admin-relations {
     list-style: none;
     padding: 0;
@@ -70,3 +56,126 @@
     margin-left: 4px;
 }
 .muted { color: #888; font-size: 12px; }
+
+/* =========================================================================
+   Schede dei record da unire.
+   Una scheda per record, con i dati censiti e i campi che differiscono in
+   evidenza: è su quelli che si rischia di perdere qualcosa scegliendo male.
+   Le schede stanno in colonna sul telefono e affiancate su schermi larghi;
+   la tabella a quattro colonne di prima non entrava in 320 px.
+   ========================================================================= */
+.merge-admin-help { line-height: 1.5; }
+
+.merge-admin-cards {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 14px;
+    margin: 16px 0;
+}
+@media (min-width: 900px) {
+    .merge-admin-cards { grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); }
+}
+
+.merge-admin-card {
+    display: block;
+    min-width: 0;
+    border: 2px solid var(--hairline-color, #e2e6ea);
+    border-radius: 14px;
+    background: var(--body-bg, #fff);
+    overflow: hidden;
+    cursor: pointer;
+}
+/* La scheda scelta si riconosce a colpo d'occhio. */
+.merge-admin-card:has(input[type="radio"]:checked) {
+    border-color: var(--primary, #417690);
+    box-shadow: 0 0 0 3px rgba(65, 118, 144, .16);
+}
+
+.merge-admin-card-head {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+    padding: 12px 14px;
+    background: var(--darkened-bg, #f4f6f8);
+    border-bottom: 1px solid var(--hairline-color, #e2e6ea);
+}
+.merge-admin-card-head input[type="radio"] {
+    flex: 0 0 auto;
+    width: 22px;
+    height: 22px;
+    margin: 0;
+}
+.merge-admin-card-title { flex: 1 1 120px; min-width: 0; }
+.merge-admin-card-title strong {
+    display: block;
+    font-size: 15px;
+    overflow-wrap: anywhere;
+}
+.merge-admin-card-title small { color: var(--body-quiet-color, #888); font-size: 12px; }
+.merge-admin-keep {
+    flex: 0 0 auto;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: .5px;
+    text-transform: uppercase;
+    color: var(--body-quiet-color, #888);
+}
+.merge-admin-card:has(input[type="radio"]:checked) .merge-admin-keep {
+    color: var(--primary, #417690);
+}
+
+.merge-admin-data { margin: 0; padding: 0; }
+.merge-admin-field {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 2px 10px;
+    padding: 7px 14px;
+    border-bottom: 1px solid var(--hairline-color, #f0f2f4);
+    min-width: 0;
+}
+.merge-admin-field:last-child { border-bottom: none; }
+.merge-admin-field dt {
+    flex: 0 0 38%;
+    min-width: 0;
+    margin: 0;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: .3px;
+    text-transform: uppercase;
+    color: var(--body-quiet-color, #888);
+    overflow-wrap: anywhere;
+}
+.merge-admin-field dd {
+    flex: 1 1 140px;
+    min-width: 0;
+    margin: 0;
+    font-size: 14px;
+    overflow-wrap: anywhere;
+}
+/* Valori diversi fra i record: sono la ragione per cui si guarda questa pagina. */
+.merge-admin-field.is-diff { background: rgba(230, 126, 34, .10); }
+.merge-admin-field.is-diff dt { color: #b9590d; }
+.merge-admin-flag { font-weight: 700; }
+.merge-admin-field.is-empty dd { font-style: italic; }
+
+.merge-admin-effects {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 10px;
+    padding: 12px 14px;
+    border-top: 1px solid var(--hairline-color, #e2e6ea);
+    background: var(--darkened-bg, #fafbfc);
+}
+.merge-admin-effect h3 {
+    margin: 0 0 4px;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: .5px;
+    text-transform: uppercase;
+    color: var(--body-quiet-color, #888);
+}
+.merge-admin-effect p { margin: 0; }
+.merge-admin-effect li { overflow-wrap: anywhere; }
+
+.merge-admin-submit { display: flex; flex-wrap: wrap; gap: 8px; }

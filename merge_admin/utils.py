@@ -246,22 +246,36 @@ def merge_records(
         src, tgt = _m2m_through_columns(m2m_field, source_is_local=True)
         _reparent_m2m(through, src, tgt, primary.pk, dup_pks)
 
-    # Fill empty scalar fields on the primary
+    # Valori da travasare nei campi vuoti del record che sopravvive.
+    # Si leggono adesso, dagli oggetti gia' in memoria, ma si scrivono DOPO
+    # aver eliminato i duplicati: copiare prima un valore di un campo unique
+    # (un codice fiscale, una email) violerebbe il vincolo, perche' quel
+    # valore appartiene ancora al duplicato.
+    fills = {}
     if fill_empty_fields and plan.field_fills:
-        dirty = False
         for name in plan.field_fills:
-            current = getattr(primary, name, None)
-            if current in (None, ""):
-                for dup in duplicates:
-                    val = getattr(dup, name, None)
-                    if val not in (None, ""):
-                        setattr(primary, name, val)
-                        dirty = True
-                        break
-        if dirty:
-            primary.save(update_fields=plan.field_fills)
+            if getattr(primary, name, None) not in (None, ""):
+                continue
+            for dup in duplicates:
+                val = getattr(dup, name, None)
+                if val not in (None, ""):
+                    fills[name] = val
+                    break
 
     if delete_duplicates:
         model._default_manager.filter(pk__in=dup_pks).delete()
+    elif fills:
+        # Senza eliminare i duplicati, un valore unico resta occupato:
+        # quei campi si lasciano com'erano invece di far fallire tutto.
+        fills = {
+            name: value
+            for name, value in fills.items()
+            if not getattr(model._meta.get_field(name), "unique", False)
+        }
+
+    if fills:
+        for name, value in fills.items():
+            setattr(primary, name, value)
+        primary.save(update_fields=list(fills))
 
     return plan
